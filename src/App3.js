@@ -25,6 +25,7 @@ const App = (props) => {
     function connect() {
         var socket = new SockJS('http://localhost:8080/websocket-chat/');
         stompClient = Stomp.over(socket);
+        console.log("stompClient:", stompClient)
         socket.onopen = function() {
             console.log('open!!!!!!!!!!!!!!!!!!!!!');
         }

@@ -20,6 +20,7 @@ const App = (props) => {
         console.log("username", name)
         setName(name)
     }
+    console.log("clientref", clientRef)
 
     const sendMessage = () => {
         console.log("send mesaj, clientRef", clientRef, clientRef.current.client)
@@ -30,31 +31,61 @@ const App = (props) => {
         }));
     };
 
+    const sendName = () => {
+        clientRef.current.sendMessage('/app/user-specific', JSON.stringify({
+            name: username,
+        }));
+    }
+
     const handleOnMessage = (msg) => {
-        console.log("onmessage")
+        console.log("onmessage", msg)
         var jobs = messages;
         jobs.push(msg);
         setMessages([...jobs]);
     }
 
+    const handleDisconnect = () => {
+        clientRef.current.disconnect()
+    }
+
+    const handleConnect = () => {
+        clientRef.current.connect()
+    }
+
     const displayMessages = () => {
         return (
             <div>
-                {messages.map(msg => {
-                    return (
-                        <div>
-                            {username == msg.name ?
+                {clientRef.current !== null && clientRef.current.props.subscribeHeaders !== '/user/queue/greetings'
+                    ? messages.map(msg => {
+                        return (
+                            <div>
+                                {username == msg.name ?
+                                    <div>
+                                        <p className="title1">{msg.name} : </p><br />
+                                        <p>{msg.message}</p>
+                                    </div> :
+                                    <div>
+                                        <p className="title2">{msg.name} : </p><br />
+                                        <p>{msg.message}</p>
+                                    </div>
+                                }
+                            </div>)
+                    })
+                    :
+                    [clientRef.current !== null && clientRef.current.props.subscribeHeaders !== '/topic/user'
+                        ? messages.map(msg => {
+                            return (
                                 <div>
-                                    <p className="title1">{msg.name} : </p><br />
-                                    <p>{msg.message}</p>
-                                </div> :
-                                <div>
-                                    <p className="title2">{msg.name} : </p><br />
-                                    <p>{msg.message}</p>
-                                </div>
-                            }
-                        </div>)
-                })}
+
+                                    <div>
+                                        <p className="title1">{msg} : </p><br />
+
+                                    </div>
+
+                                </div>)
+                        })
+                        : ""]
+                }
             </div>
         );
     };
@@ -89,6 +120,10 @@ const App = (props) => {
                             <Button variant="contained" color="primary"
                                 onClick={sendMessage}>Send</Button>
                         </td>
+                        <td>
+                            <Button variant="contained" color="primary"
+                                onClick={sendName}>SendName</Button>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -96,19 +131,21 @@ const App = (props) => {
             <div className="align-center">
                 {displayMessages()}
             </div>
-            <SockJsClient 
+            <button onClick={handleConnect}>connect</button>
+            <button onClick={handleDisconnect}>disconnect</button>
+            <SockJsClient
                 url='http://localhost:8080/websocket-chat/'
-                topics={['/topic/user']}
-                onConnect={(e) => {
-                    console.log("connected",e);
+                topics={['/topic/all', '/user/queue/user']}
+                onConnect={() => {
+                    console.log("connected");
                 }}
                 onDisconnect={() => {
                     console.log("Disconnected");
                 }}
                 onMessage={handleOnMessage}
                 ref={clientRef}
-                headers={(e) => console.log("eeee headers",e)}
-            />
+                autoReconnect={true}
+             />
         </div>
     )
 
